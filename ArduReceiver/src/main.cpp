@@ -20,7 +20,7 @@
 #define IND_SENSOR_COUNT (1)
 #define IND_DATA (2)
 #define PAYLOAD_HEADER_SIZE (2)
-#define PAYLOAD_DATA_SIZE (2)
+#define PAYLOAD_DATA_SIZE (3)
 
 // Blinky on receipt
 #define LED 13
@@ -106,11 +106,13 @@ bool process_data(const uint8_t* buff, uint8_t buff_len, int8_t rssi)
        return false; 
     }
 
-    for(uint8_t ind = IND_DATA; ind < ind_checksum; ind += 2)
+    for(uint8_t startind = IND_DATA; startind < ind_checksum; startind += PAYLOAD_DATA_SIZE)
     {
         Serial.write(rssi);
-        Serial.write(buff[ind]);
-        Serial.write(buff[ind+1]);
+        for(uint8_t dataind = 0; dataind < PAYLOAD_DATA_SIZE; dataind++)
+        {
+            Serial.write(buff[startind + dataind]);
+        }
         Serial.write(0x0A);
     }
 
