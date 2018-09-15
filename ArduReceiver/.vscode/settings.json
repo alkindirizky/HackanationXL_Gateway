@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\Users\\Bukalapak\\.platformio\\penv\\Scripts;C:\\Users\\Bukalapak\\.platformio\\penv;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\PuTTY\\;C:\\Go\\bin;C:\\Users\\Bukalapak\\AppData\\Local\\Programs\\Python\\Python37-32\\Scripts\\;C:\\Users\\Bukalapak\\AppData\\Local\\Programs\\Python\\Python37-32\\;C:\\Users\\Bukalapak\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\Bukalapak\\go\\bin;C:\\Program Files\\mosquitto;;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\PuTTY\\;C:\\Go\\bin;C:\\Users\\Bukalapak\\AppData\\Local\\Programs\\Python\\Python37-32\\Scripts\\;C:\\Users\\Bukalapak\\AppData\\Local\\Programs\\Python\\Python37-32\\;C:\\Users\\Bukalapak\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\Bukalapak\\go\\bin;C:\\Program Files\\mosquitto;",
+        "PLATFORMIO_CALLER": "vscode"
+    }
+}
