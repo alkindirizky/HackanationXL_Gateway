@@ -19,8 +19,12 @@
 #define IND_START_BYTE (0)
 #define IND_SENSOR_COUNT (1)
 #define IND_DATA (2)
-#define PAYLOAD_HEADER_SIZE (2)
-#define PAYLOAD_DATA_SIZE (3)
+#define EVENT_HEADER_SIZE (2)
+#define EVENT_DATA_SIZE (3)
+#define ACTION_HEADER_SIZE (1)
+#define ACTION_DATA_SIZE (3)
+#define ACTION_SERIAL_BUFSIZE (16)
+
 
 // Blinky on receipt
 #define LED 13
@@ -90,7 +94,7 @@ bool check_sum(const uint8_t* data, uint8_t data_len, uint8_t checksum_ref)
     return checksum == checksum_ref ? true : false;
 }
 
-bool process_data(const uint8_t* buff, uint8_t buff_len, int8_t rssi)
+bool process_event(const uint8_t* buff, uint8_t buff_len, int8_t rssi)
 {
     if(buff[IND_START_BYTE] != 0xFA)
     {
@@ -98,7 +102,7 @@ bool process_data(const uint8_t* buff, uint8_t buff_len, int8_t rssi)
         return false;
     }
 
-    uint8_t ind_checksum = (buff[IND_SENSOR_COUNT] * PAYLOAD_DATA_SIZE) + PAYLOAD_HEADER_SIZE;
+    uint8_t ind_checksum = (buff[IND_SENSOR_COUNT] * EVENT_DATA_SIZE) + EVENT_HEADER_SIZE;
 
     if(!check_sum(buff, buff_len - 1, buff[ind_checksum]))
     {
@@ -106,10 +110,10 @@ bool process_data(const uint8_t* buff, uint8_t buff_len, int8_t rssi)
        return false; 
     }
 
-    for(uint8_t startind = IND_DATA; startind < ind_checksum; startind += PAYLOAD_DATA_SIZE)
+    for(uint8_t startind = IND_DATA; startind < ind_checksum; startind += EVENT_DATA_SIZE)
     {
         Serial.write(rssi);
-        for(uint8_t dataind = 0; dataind < PAYLOAD_DATA_SIZE; dataind++)
+        for(uint8_t dataind = 0; dataind < EVENT_DATA_SIZE; dataind++)
         {
             Serial.write(buff[startind + dataind]);
         }
@@ -119,23 +123,54 @@ bool process_data(const uint8_t* buff, uint8_t buff_len, int8_t rssi)
     return true;
 }
 
+void process_action(uint8_t* buffer, uint8_t buffer_len)
+{
+    if(buffer_len < ACTION_DATA_SIZE)
+    {
+        Serial.println("STAT : Undersized Action Data");
+        return;
+    }
+    else if(buffer_len > ACTION_DATA_SIZE)
+    {
+        Serial.println("STAT : Oversized Action Data");
+        return;
+    }
+
+    // Payload Format : 0xFA | ACT_TYPE | DEV_ID | VALUE | CHECKSUM
+    uint8_t payload[ACTION_HEADER_SIZE + ACTION_DATA_SIZE + 1] = {0xFA, buffer[0], buffer[1], buffer[2], 0};
+    payload[ACTION_HEADER_SIZE + ACTION_DATA_SIZE] = calc_sum(payload, ACTION_HEADER_SIZE + ACTION_DATA_SIZE);
+
+    rf95.send(payload, sizeof(payload));
+    rf95.waitPacketSent();
+    Serial.println("STAT : Action Tranmission Succeed");
+}
+
 void loop()
 {
-  if (rf95.available())
-  {
-    // Should be a message for us now
-    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-    uint8_t len = sizeof(buf);
+    if (rf95.available())
+    {
+        // Should be a message for us now
+        uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+        uint8_t len = sizeof(buf);
 
-    if (rf95.recv(buf, &len))
-    {
-        digitalWrite(LED, HIGH);
-        process_data(buf, len, rf95.lastRssi());
-        digitalWrite(LED, LOW);
+        // Check event
+        if (rf95.recv(buf, &len))
+        {
+            digitalWrite(LED, HIGH);
+            process_event(buf, len, rf95.lastRssi());
+            digitalWrite(LED, LOW);
+        }
+        else
+        {
+            Serial.println("STAT : Receive Error");
+        }
     }
-    else
+
+      // Check action
+    if(Serial.available() > 0)
     {
-        Serial.println("STAT : Receive Error");
+        uint8_t buf[ACTION_SERIAL_BUFSIZE];
+        uint16_t read_len = Serial.readBytesUntil(0x0A, buf, ACTION_SERIAL_BUFSIZE);
+        process_action(buf, read_len);
     }
-  }
 }
