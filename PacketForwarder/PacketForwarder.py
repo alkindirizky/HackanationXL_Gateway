@@ -13,6 +13,7 @@ broker_user = 'rabbit'
 broker_pass = 'rabbit'
 
 event_topic = 'generic_brand_777generic_devicev2/common'
+action_topic = 'generic_brand_777/generic_device/v2/sub'
 
 def conv_to_sign_int8(val):
     if val >= 128:
@@ -52,13 +53,35 @@ def process_data(mqtt_client, data):
     except Exception as e:
         print(e)
 
+
+def on_message(client, userdata, message):
+    message_payload = str(message.payload.decode("utf-8"))
+    print("message received " , message_payload)
+    print("message topic=",message.topic)
+    print("message qos=",message.qos)
+    print("message retain flag=",message.retain)
+
+    #serial_com is passed as userdata before connection
+    serial_com = userdata
+    try:
+        serial_com.write(bytes([0x01, 0x01, 0x01, 0x0A]))
+    except serial.SerialTimeoutException:
+        print("ERROR : Serial writing timeout")
+
+
 def start_forwarder(com_port, baudrate = 115200, read_timeout_sec = 2, write_timeout_sec = 1):
     com = serial.Serial(com_port, baudrate, 8, 'N',
         1, read_timeout_sec, False, False, write_timeout_sec)
 
     client = mqtt.Client(client_name)
     client.username_pw_set(broker_user, broker_pass)
+    client.user_data_set(com)
     client.connect(broker_hostname, broker_port)
+    
+    #action subscribe
+    client.subscribe(action_topic)
+    client.on_message = on_message
+    client.loop_start()
     
     data = []
     while True:
