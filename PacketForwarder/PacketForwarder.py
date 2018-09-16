@@ -2,6 +2,8 @@ import serial
 import time
 import paho.mqtt.client as mqtt
 import json
+import time
+import datetime
 
 # MQTT Setting
 client_name = 'LoraGateway'
@@ -9,6 +11,7 @@ broker_hostname = 'mqtt.flexiot.xl.co.id'
 broker_port = 1883
 broker_user = 'rabbit'
 broker_pass = 'rabbit'
+
 event_topic = 'generic_brand_777generic_devicev2/common'
 
 def conv_to_sign_int8(val):
@@ -16,6 +19,7 @@ def conv_to_sign_int8(val):
         val -= 256
     
     return val
+
 
 def process_data(mqtt_client, data):
     dev_rssi = conv_to_sign_int8(data[0])
@@ -38,8 +42,13 @@ def process_data(mqtt_client, data):
 
     #publish the payload
     try:
-        mqtt_client.publish(event_topic, payload)
-        print("Published : {}".format(payload))
+        pub_status = mqtt_client.publish(event_topic, payload, 2)
+        if pub_status[0] == mqtt.MQTT_ERR_SUCCESS:
+            timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')
+            print("{} Published : SensorID {}, Type {}, Rssi {}, Data {}".format(timestamp, dev_id, dev_type, dev_rssi, dev_data))
+        else:
+            timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')
+            print("{} ERROR : Unable to publish {}".format(timestamp, pub_status))
     except Exception as e:
         print(e)
 
@@ -54,16 +63,17 @@ def start_forwarder(com_port, baudrate = 115200, read_timeout_sec = 2, write_tim
     data = []
     while True:
         data = com.read_until(serial.LF)
+        timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')
         if data == b'':
             continue
 
         if data[0] == 83:
-            print("{}".format(data.decode().replace('\n', '')))
+            print("{} {}".format(timestamp, data.decode().replace('\n', '')))
             continue
         
         data = list(data)
         if len(data) < 4:
-            print("ERR : Insufficient data : {}".format(data))
+            print("{} ERR : Insufficient data : {}".format(timestamp, data))
             continue
 
         process_data(client, data)
